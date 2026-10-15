@@ -1,0 +1,7 @@
+# Store text files with LF in git so Linux CI runners and containers get the same files.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

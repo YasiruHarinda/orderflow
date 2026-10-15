@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pure business rules. References nothing on purpose. -->
+
+</Project>
