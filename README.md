@@ -1,5 +1,4 @@
 # OrderFlow
-
 Event-driven order processing on **.NET 10 microservices**, delivered to **Azure Kubernetes Service** through a GitOps platform.
 
 > 🚧 Work in progress. See the [design document](docs/DESIGN.md) and the [implementation plan](docs/PLAN.md).
