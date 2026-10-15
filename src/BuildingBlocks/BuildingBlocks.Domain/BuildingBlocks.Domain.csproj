@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Base types shared by every service's domain layer. References nothing on purpose. -->
+
+</Project>

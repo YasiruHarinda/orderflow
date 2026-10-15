@@ -1,9 +1,15 @@
 <Solution>
   <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />
+  </Folder>
   <Folder Name="/src/Orders/">
     <Project Path="src/Orders/Orders.API/Orders.API.csproj" />
     <Project Path="src/Orders/Orders.Application/Orders.Application.csproj" />
     <Project Path="src/Orders/Orders.Domain/Orders.Domain.csproj" />
     <Project Path="src/Orders/Orders.Infrastructure/Orders.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Orders.UnitTests/Orders.UnitTests.csproj" />
   </Folder>
 </Solution>

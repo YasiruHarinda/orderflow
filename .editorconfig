@@ -387,3 +387,12 @@ dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator = 
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+
+# ----- OrderFlow project decisions -----
+[*.cs]
+# CA1716: "Error" is a Visual Basic keyword. This code is only consumed from C#.
+dotnet_diagnostic.CA1716.severity = none
+
+[tests/**/*.cs]
+# CA1707: underscores make test names readable as sentences, e.g. Confirmed_order_cannot_be_rejected.
+dotnet_diagnostic.CA1707.severity = none

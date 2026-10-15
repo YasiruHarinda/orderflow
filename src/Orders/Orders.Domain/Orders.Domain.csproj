@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Pure business rules. References nothing on purpose. -->
+  <!-- Pure business rules. Only depends on the shared domain building blocks. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Domain\BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
 
 </Project>
