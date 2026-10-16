@@ -14,6 +14,9 @@ spec:
   parentRefs:
     - name: {{ .Values.httpRoute.parentRef.name }}
       namespace: {{ .Values.httpRoute.parentRef.namespace }}
+      {{- with .Values.httpRoute.parentRef.sectionName }}
+      sectionName: {{ . }} # which listener of the shared Gateway (e.g. dev on :8080, prod on :80)
+      {{- end }}
   {{- with .Values.httpRoute.hostnames }}
   hostnames:
     {{- toYaml . | nindent 4 }}

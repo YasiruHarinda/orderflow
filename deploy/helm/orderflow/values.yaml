@@ -17,6 +17,7 @@ httpRoute:
   parentRef:
     name: orderflow
     namespace: envoy-gateway-system
+    sectionName: "" # listener name on the shared Gateway; empty = all listeners
 # Namespace of the Envoy proxies; NetworkPolicy lets only them reach the gateway pods.
 ingressNamespace: envoy-gateway-system
 
