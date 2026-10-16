@@ -1,0 +1,43 @@
+{{- /*
+How Argo Rollouts decides if a canary is healthy. It queries Prometheus every minute,
+looking ONLY at pods of the new version (service_version label = the new image tag).
+Two failed checks => automatic rollback to the previous version.
+No traffic yet (empty or NaN result) counts as healthy.
+
+{{ "{{args.x}}" }} is written this way so Helm leaves it alone; Argo Rollouts fills it in.
+*/ -}}
+{{- $needed := false }}
+{{- range $name, $svc := .Values.services }}{{ if and $svc.enabled (dig "rollout" "enabled" false $svc) }}{{ $needed = true }}{{ end }}{{ end }}
+{{- if $needed }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: orderflow-canary-health
+  labels:
+    app.kubernetes.io/part-of: orderflow
+spec:
+  args:
+    - name: service
+    - name: version
+  metrics:
+    - name: success-rate
+      interval: 1m
+      failureLimit: 1
+      successCondition: len(result) == 0 || isNaN(result[0]) || result[0] >= {{ .Values.canary.minSuccessRate }}
+      provider:
+        prometheus:
+          address: {{ .Values.canary.prometheusAddress }}
+          query: |
+            sum(rate(http_server_request_duration_seconds_count{service_name="{{ "{{args.service}}" }}", service_version="{{ "{{args.version}}" }}", http_response_status_code!~"5.."}[2m]))
+            /
+            sum(rate(http_server_request_duration_seconds_count{service_name="{{ "{{args.service}}" }}", service_version="{{ "{{args.version}}" }}"}[2m]))
+    - name: p95-latency
+      interval: 1m
+      failureLimit: 1
+      successCondition: len(result) == 0 || isNaN(result[0]) || result[0] <= {{ .Values.canary.maxP95LatencySeconds }}
+      provider:
+        prometheus:
+          address: {{ .Values.canary.prometheusAddress }}
+          query: |
+            histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name="{{ "{{args.service}}" }}", service_version="{{ "{{args.version}}" }}"}[2m])))
+{{- end }}

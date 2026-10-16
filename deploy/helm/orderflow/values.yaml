@@ -1,0 +1,83 @@
+# Default values. Each environment (local, dev, prod) overrides only what differs:
+# local: deploy/helm/orderflow/values-local.yaml
+# dev/prod: the orderflow-gitops repository (envs/<env>/values.yaml)
+
+global:
+  # Images are pulled from <imageRegistry>/<repository>:<tag>.
+  imageRegistry: ghcr.io/yasiruharinda/orderflow
+  imagePullPolicy: IfNotPresent
+  environment: Production
+  # Where services send logs, metrics and traces (OpenTelemetry Collector). Empty = off.
+  otlpEndpoint: http://otel-collector.observability.svc.cluster.local:4317
+
+# Public traffic enters through the Gateway API (Envoy Gateway) and goes to the gateway service only.
+httpRoute:
+  enabled: true
+  hostnames: []
+  parentRef:
+    name: orderflow
+    namespace: envoy-gateway-system
+# Namespace of the Envoy proxies; NetworkPolicy lets only them reach the gateway pods.
+ingressNamespace: envoy-gateway-system
+
+# Canary analysis (Argo Rollouts) reads success rate and latency from Prometheus.
+canary:
+  prometheusAddress: http://kube-prometheus-stack-prometheus.observability.svc.cluster.local:9090
+  minSuccessRate: 0.99
+  maxP95LatencySeconds: 0.5
+
+defaults: &defaults
+  enabled: true
+  replicas: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      memory: 384Mi # no CPU limit: it causes throttling; requests already reserve CPU
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+  env: {}
+
+services:
+  gateway:
+    <<: *defaults
+    image:
+      repository: gateway
+      tag: latest
+    allowFromIngress: true # reachable from the Envoy proxies
+    allowFrom: []
+
+  orders-api:
+    <<: *defaults
+    image:
+      repository: orders-api
+      tag: latest
+    secretName: orderflow-orders-api # connection strings (created by External Secrets in AKS)
+    migrations: true # run "--migrate" as a Job before every install/upgrade
+    rollout:
+      enabled: false # true = Argo Rollouts canary instead of a plain Deployment
+    allowFrom: [gateway]
+
+  inventory-api:
+    <<: *defaults
+    image:
+      repository: inventory-api
+      tag: latest
+    secretName: orderflow-inventory-api
+    migrations: true
+    allowFrom: [gateway]
+
+  notifications-worker:
+    <<: *defaults
+    replicas: 1
+    autoscaling:
+      enabled: false
+    image:
+      repository: notifications-worker
+      tag: latest
+    secretName: orderflow-notifications-worker
+    allowFrom: [] # receives nothing over HTTP; it only reads from RabbitMQ

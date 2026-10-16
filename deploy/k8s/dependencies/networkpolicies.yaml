@@ -1,0 +1,33 @@
+# Only OrderFlow pods may talk to the data services. Anything else in the cluster is refused.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dependencies-from-orderflow-only
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: orderflow-dependencies
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/part-of: orderflow
+---
+# Prometheus (in the "observability" namespace) may scrape RabbitMQ's metrics port.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rabbitmq-metrics-from-prometheus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: rabbitmq
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - port: prometheus

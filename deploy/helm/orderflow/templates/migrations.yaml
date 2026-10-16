@@ -1,0 +1,58 @@
+{{- /*
+Database migrations run as a Job BEFORE the new version starts (Helm pre-install/pre-upgrade
+hook; ArgoCD runs it as a PreSync hook). If the migration fails, the deployment stops and
+the old version keeps running. Migrations must be backwards compatible (add columns, don't
+drop them), because old pods keep running during the rollout.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled (dig "migrations" false $svc) }}
+{{- $ctx := dict "root" $ "name" $name "svc" $svc }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}-migrate
+  labels:
+    {{- include "orderflow.labels" $ctx | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}-migrate
+        app.kubernetes.io/part-of: orderflow
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        {{- include "orderflow.podSecurity" $ctx | nindent 8 }}
+      containers:
+        - name: migrate
+          image: {{ include "orderflow.image" $ctx }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          args: ["--migrate"]
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ $.Values.global.environment | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ $svc.secretName }}
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            {{- include "orderflow.containerSecurity" $ctx | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
+{{- end }}

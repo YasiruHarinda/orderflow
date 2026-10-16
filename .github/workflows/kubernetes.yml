@@ -1,0 +1,121 @@
+# Kubernetes checks on every pull request that touches deployment files or code:
+#   validate: the Helm chart and manifests render and match the Kubernetes schemas
+#   e2e:      deploy EVERYTHING to a throwaway kind cluster and place real orders
+name: Kubernetes
+
+on:
+  pull_request:
+    paths: ["deploy/**", "src/**", "scripts/**", ".github/workflows/kubernetes.yml"]
+  push:
+    branches: [main]
+    paths: ["deploy/**", "src/**", "scripts/**", ".github/workflows/kubernetes.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kubernetes-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HELM_VERSION: v4.3.1
+  KUBECONFORM_VERSION: v0.7.0
+  KUBERNETES_VERSION: 1.33.0
+  CHART: deploy/helm/orderflow
+
+jobs:
+  validate:
+    name: Validate manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Install kubeconform
+        run: |
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+
+      - name: Lint chart
+        run: |
+          helm lint "$CHART" --strict
+          helm lint "$CHART" --strict -f "$CHART/values-local.yaml"
+
+      - name: Render and validate against Kubernetes schemas
+        run: |
+          mkdir -p rendered
+          helm template orderflow "$CHART" > rendered/default.yaml
+          helm template orderflow "$CHART" --set services.orders-api.rollout.enabled=true > rendered/canary.yaml
+          helm template orderflow "$CHART" -f "$CHART/values-local.yaml" > rendered/local.yaml
+          kubectl kustomize deploy/k8s/local > rendered/local-dependencies.yaml
+          # Custom resources (Rollout, HTTPRoute, ...) are checked with schemas from the CRDs catalog.
+          kubeconform -strict -summary -kubernetes-version "$KUBERNETES_VERSION" \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            rendered/ deploy/k8s/local/cluster/
+
+  e2e:
+    name: End-to-end on kind
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Create kind cluster
+        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          version: v0.32.0
+          cluster_name: orderflow
+
+      - name: Build images and load them into kind
+        run: |
+          declare -A dockerfiles=(
+            [orders-api]=src/Orders/Orders.API/Dockerfile
+            [inventory-api]=src/Inventory/Inventory.API/Dockerfile
+            [notifications-worker]=src/Notifications/Notifications.Worker/Dockerfile
+            [gateway]=src/Gateway/Dockerfile
+          )
+          for svc in "${!dockerfiles[@]}"; do
+            docker build -t "orderflow/$svc:dev" -f "${dockerfiles[$svc]}" . &
+          done
+          wait
+          kind load docker-image --name orderflow orderflow/{orders-api,inventory-api,notifications-worker,gateway}:dev
+
+      - name: Deploy dependencies
+        run: |
+          kubectl apply -f deploy/k8s/local/namespace.yaml
+          kubectl apply -n orderflow -k deploy/k8s/dependencies
+          kubectl apply -n orderflow -f deploy/k8s/local/secrets.yaml
+          kubectl -n orderflow rollout status statefulset/postgres --timeout=180s
+          kubectl -n orderflow rollout status statefulset/rabbitmq --timeout=240s
+          kubectl -n orderflow rollout status deployment/redis --timeout=120s
+
+      # The same chart as AKS. No Envoy Gateway here, so the HTTPRoute is switched off
+      # and the test talks to the gateway Service through a port-forward.
+      - name: Install OrderFlow
+        run: |
+          helm upgrade --install orderflow "$CHART" -n orderflow \
+            -f "$CHART/values-local.yaml" --set httpRoute.enabled=false \
+            --wait --timeout 10m
+
+      - name: Smoke test
+        run: |
+          kubectl -n orderflow port-forward svc/gateway 8080:80 >/dev/null 2>&1 &
+          sleep 5
+          bash scripts/smoke-test.sh http://localhost:8080
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n orderflow get pods,jobs,events --sort-by=.lastTimestamp
+          for pod in $(kubectl -n orderflow get pods -o name); do
+            echo "----- $pod"; kubectl -n orderflow logs "$pod" --all-containers --tail=100 || true
+          done

@@ -1,0 +1,31 @@
+# Local Kubernetes (k3d or kind): images are built on your machine and imported into the
+# cluster, so nothing is pulled from a registry. One replica each, no autoscaling.
+global:
+  imageRegistry: ""
+  imagePullPolicy: Never
+  otlpEndpoint: "" # no observability stack locally; use the Aspire dashboard or compose for that
+
+httpRoute:
+  parentRef:
+    name: orderflow
+    namespace: orderflow
+ingressNamespace: envoy-gateway-system
+
+services:
+  gateway:
+    replicas: 1
+    autoscaling: { enabled: false }
+    image: { repository: orderflow/gateway, tag: dev }
+  orders-api:
+    replicas: 1
+    autoscaling: { enabled: false }
+    image: { repository: orderflow/orders-api, tag: dev }
+    env:
+      # Fast timeout so you can watch a stuck order get rejected.
+      Orders__StuckOrders__Timeout: "00:00:30"
+  inventory-api:
+    replicas: 1
+    autoscaling: { enabled: false }
+    image: { repository: orderflow/inventory-api, tag: dev }
+  notifications-worker:
+    image: { repository: orderflow/notifications-worker, tag: dev }

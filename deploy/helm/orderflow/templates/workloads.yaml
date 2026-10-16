@@ -1,0 +1,78 @@
+{{- /*
+One Deployment (or Argo Rollout, for canary releases) per enabled service,
+plus its ServiceAccount and ClusterIP Service.
+*/ -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $ctx := dict "root" $ "name" $name "svc" $svc }}
+{{- $canary := dig "rollout" "enabled" false $svc }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "orderflow.labels" $ctx | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "orderflow.labels" $ctx | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "orderflow.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: {{ if $canary }}argoproj.io/v1alpha1{{ else }}apps/v1{{ end }}
+kind: {{ if $canary }}Rollout{{ else }}Deployment{{ end }}
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "orderflow.labels" $ctx | nindent 4 }}
+spec:
+  {{- if not (dig "autoscaling" "enabled" false $svc) }}
+  replicas: {{ $svc.replicas }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "orderflow.selectorLabels" $ctx | nindent 6 }}
+  {{- if $canary }}
+  # CANARY: send a small share of traffic to the new version, let Prometheus judge it,
+  # then continue - or roll back automatically if errors or latency go up.
+  strategy:
+    canary:
+      analysis:
+        templates:
+          - templateName: orderflow-canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: {{ $name }}
+          - name: version
+            value: {{ $svc.image.tag | toString | quote }}
+      steps:
+        - setWeight: 20
+        - pause: { duration: 3m }
+        - setWeight: 50
+        - pause: { duration: 3m }
+  {{- else }}
+  # ROLLING UPDATE: start one new pod, wait until it is ready, then stop one old pod.
+  # maxUnavailable 0 = capacity never drops during a deployment.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  {{- end }}
+  template:
+    {{- include "orderflow.podTemplate" $ctx | nindent 4 }}
+{{- end }}
+{{- end }}

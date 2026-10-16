@@ -1,0 +1,10 @@
+# Data services for in-cluster environments (local and dev).
+# They expect a Secret named "orderflow-dependencies" with keys postgres-password and
+# rabbitmq-password: local/ creates it by hand, AKS gets it from Key Vault (External Secrets).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - postgres.yaml
+  - rabbitmq.yaml
+  - redis.yaml
+  - networkpolicies.yaml
