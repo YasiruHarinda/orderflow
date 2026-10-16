@@ -2,6 +2,18 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Orders.Domain\Orders.Domain.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Application\BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Scrutor" />
+  </ItemGroup>
+
+  <!-- Handlers and validators are internal; only DI and the unit tests may see them. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Orders.UnitTests" />
   </ItemGroup>
 
 </Project>

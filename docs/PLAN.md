@@ -34,7 +34,7 @@ Accounts:
 - [ ] `AppHost` (Aspire) with Postgres, RabbitMQ, Redis resources
 - [ ] `BuildingBlocks`: `Result<T>`, `Error`, `Entity`, `AggregateRoot`, domain events, message contracts
 - [ ] `Orders.Domain`: `Order` aggregate, `OrderLine`, `Money`, status rules
-- [ ] `Orders.Application`: `PlaceOrder`, `GetOrder`, `ListOrders` (MediatR) + FluentValidation behavior
+- [ ] `Orders.Application`: `PlaceOrder`, `GetOrder`, `ListOrders` (CQRS handlers) + FluentValidation decorator
 - [ ] `Orders.Infrastructure`: EF Core DbContext, configurations, first migration
 - [ ] `Orders.API`: Minimal API endpoints, versioning, ProblemDetails, OpenAPI + Scalar
 - [ ] Unit tests for domain and handlers; architecture tests

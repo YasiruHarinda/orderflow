@@ -32,6 +32,9 @@ public static class OrderErrors
     public static readonly Error RejectionReasonRequired =
         new("Order.RejectionReasonRequired", "A rejected order must have a reason.");
 
+    public static Error NotFound(Guid orderId) =>
+        new("Order.NotFound", $"Order '{orderId}' was not found.", ErrorType.NotFound);
+
     public static Error InvalidStatusChange(OrderStatus from, OrderStatus to) =>
         new("Order.InvalidStatusChange", $"Cannot change an order from {from} to {to}.", ErrorType.Conflict);
 }

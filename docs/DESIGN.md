@@ -146,7 +146,7 @@ The GitOps desired state lives in a **separate repository**, `orderflow-gitops`,
 |---|---|
 | Architecture | Clean Architecture per service; dependencies point inward to `Domain` |
 | Domain | DDD aggregates (`Order`, `OrderLine`, `Product`), value objects (`Money`, `Sku`, `Quantity`), domain events |
-| Use cases | CQRS via MediatR; validation via FluentValidation pipeline behavior |
+| Use cases | CQRS with minimal in-house `ICommandHandler`/`IQueryHandler` interfaces (MediatR avoided after its commercial license change); Scrutor for registration; FluentValidation run by a validation decorator |
 | Errors | Result pattern internally, mapped to RFC 9457 ProblemDetails at the API edge |
 | Persistence | EF Core 10 + Npgsql; migrations applied by a Kubernetes Job, not at app startup |
 | Concurrency | Optimistic concurrency (`xmin` row version) on `Product` stock |
