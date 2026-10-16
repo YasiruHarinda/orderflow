@@ -12,4 +12,16 @@ internal sealed class OrderRepository(OrdersDbContext db) : IOrderRepository
             .SingleOrDefaultAsync(o => o.Id == orderId, cancellationToken);
 
     public void Add(Order order) => db.Orders.Add(order);
+
+    // Uses the (Status, CreatedAt) index from OrderConfiguration.
+    public async Task<IReadOnlyList<Guid>> GetIdsAwaitingStockAsync(
+        DateTimeOffset createdBefore,
+        int maxCount,
+        CancellationToken cancellationToken) =>
+        await db.Orders
+            .Where(o => o.Status == OrderStatus.AwaitingStock && o.CreatedAt < createdBefore)
+            .OrderBy(o => o.CreatedAt)
+            .Select(o => o.Id)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
 }

@@ -17,6 +17,10 @@ internal sealed class FakeOrderRepository : IOrderRepository
         Task.FromResult(Orders.SingleOrDefault(o => o.Id == orderId));
 
     public void Add(Order order) => Orders.Add(order);
+
+    public Task<IReadOnlyList<Guid>> GetIdsAwaitingStockAsync(DateTimeOffset createdBefore, int maxCount, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<Guid>>(
+            [.. Orders.Where(o => o.Status == OrderStatus.AwaitingStock && o.CreatedAt < createdBefore).Take(maxCount).Select(o => o.Id)]);
 }
 
 internal sealed class FakeUnitOfWork : IUnitOfWork

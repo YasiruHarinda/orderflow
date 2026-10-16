@@ -40,4 +40,9 @@ builder.AddProject<Projects.Inventory_API>("inventory-api")
     .WaitFor(rabbitmq)
     .WithHttpHealthCheck("/health/ready");
 
+builder.AddProject<Projects.Notifications_Worker>("notifications-worker")
+    .WithReference(rabbitmq)
+    .WaitFor(rabbitmq)
+    .WithHttpHealthCheck("/health/ready");
+
 await builder.Build().RunAsync();

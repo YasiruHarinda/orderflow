@@ -1,6 +1,7 @@
 using BuildingBlocks.Application;
 using BuildingBlocks.Domain;
 using Orders.Application.Abstractions;
+using Orders.Application.Metrics;
 using Orders.Domain;
 
 namespace Orders.Application.PlaceOrder;
@@ -37,6 +38,7 @@ internal sealed class PlaceOrderCommandHandler(
 
         orders.Add(order);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        OrderMetrics.OrderPlaced();
 
         return order.Id;
     }

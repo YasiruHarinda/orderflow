@@ -16,6 +16,9 @@
     <Project Path="src/Inventory/Inventory.Domain/Inventory.Domain.csproj" />
     <Project Path="src/Inventory/Inventory.Infrastructure/Inventory.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Notifications/">
+    <Project Path="src/Notifications/Notifications.Worker/Notifications.Worker.csproj" />
+  </Folder>
   <Folder Name="/src/Orders/">
     <Project Path="src/Orders/Orders.API/Orders.API.csproj" />
     <Project Path="src/Orders/Orders.Application/Orders.Application.csproj" />

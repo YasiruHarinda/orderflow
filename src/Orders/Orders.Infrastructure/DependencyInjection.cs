@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Orders.Application.Abstractions;
+using Orders.Infrastructure.Background;
 using Orders.Infrastructure.Persistence;
 
 namespace Orders.Infrastructure;
@@ -29,6 +30,9 @@ public static class DependencyInjection
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         builder.AddMessaging<OrdersDbContext>("orders", typeof(DependencyInjection).Assembly);
+
+        builder.Services.AddOptions<StuckOrderOptions>().BindConfiguration(StuckOrderOptions.Section);
+        builder.Services.AddHostedService<StuckOrderMonitor>();
 
         return builder;
     }
