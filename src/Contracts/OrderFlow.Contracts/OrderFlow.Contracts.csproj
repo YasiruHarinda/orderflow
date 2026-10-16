@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Integration events: the messages services send each other over RabbitMQ.
+    This is the PUBLIC contract between services, so it has no dependencies and
+    changes must stay backwards compatible (add fields, never rename or remove).
+  -->
+
+</Project>

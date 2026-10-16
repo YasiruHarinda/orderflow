@@ -1,3 +1,4 @@
+using BuildingBlocks.Messaging;
 using Inventory.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -16,6 +17,7 @@ public sealed class InventoryDbContext(DbContextOptions<InventoryDbContext> opti
     {
         modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(InventoryDbContext).Assembly);
+        modelBuilder.AddMessagingTables();
     }
 }
 

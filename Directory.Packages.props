@@ -29,6 +29,13 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
+  <!-- Messaging. MassTransit stays on v8 (Apache 2.0); v9 requires a commercial licence. See ADR-0002. -->
+  <ItemGroup>
+    <PackageVersion Include="MassTransit" Version="8.5.11" />
+    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.5.11" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.11" />
+  </ItemGroup>
+
   <!-- Caching -->
   <ItemGroup>
     <PackageVersion Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.6.1" />

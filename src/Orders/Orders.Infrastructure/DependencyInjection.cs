@@ -1,3 +1,4 @@
+using BuildingBlocks.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<IOrderRepository, OrderRepository>();
         builder.Services.AddScoped<IOrderQueries, OrderQueries>();
         builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        builder.AddMessaging<OrdersDbContext>("orders", typeof(DependencyInjection).Assembly);
 
         return builder;
     }

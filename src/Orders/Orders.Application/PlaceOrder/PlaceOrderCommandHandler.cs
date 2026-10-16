@@ -9,7 +9,7 @@ namespace Orders.Application.PlaceOrder;
 /// The use case "place an order". It only coordinates:
 /// 1. ask the domain to create the Order (the domain checks the rules)
 /// 2. add it to the repository
-/// 3. save everything in one transaction
+/// 3. save everything (order + outgoing message) in one transaction
 /// </summary>
 internal sealed class PlaceOrderCommandHandler(
     IOrderRepository orders,
@@ -29,9 +29,15 @@ internal sealed class PlaceOrderCommandHandler(
             return result.Error;
         }
 
-        orders.Add(result.Value);
+        var order = result.Value;
+
+        // The "please reserve stock" message (OrderSubmitted) is saved in the same
+        // transaction as the order (outbox), so from now on the order is waiting for stock.
+        order.MarkAwaitingStock();
+
+        orders.Add(order);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return result.Value.Id;
+        return order.Id;
     }
 }

@@ -1,3 +1,4 @@
+using BuildingBlocks.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Orders.Domain;
 
@@ -19,5 +20,8 @@ public sealed class OrdersDbContext(DbContextOptions<OrdersDbContext> options) :
 
         // Picks up every IEntityTypeConfiguration class in this project.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrdersDbContext).Assembly);
+
+        // Outbox + inbox tables live in the same database, so they share transactions with orders.
+        modelBuilder.AddMessagingTables();
     }
 }

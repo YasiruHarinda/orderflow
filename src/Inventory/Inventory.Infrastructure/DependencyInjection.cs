@@ -1,3 +1,4 @@
+using BuildingBlocks.Messaging;
 using Inventory.Application.Abstractions;
 using Inventory.Infrastructure.Caching;
 using Inventory.Infrastructure.Persistence;
@@ -44,6 +45,8 @@ public static class DependencyInjection
         builder.Services.AddScoped<ProductQueries>();
         builder.Services.AddScoped<IProductQueries, CachedProductQueries>();
         builder.Services.AddScoped<IProductCache, ProductCache>();
+
+        builder.AddMessaging<InventoryDbContext>("inventory", typeof(DependencyInjection).Assembly);
 
         return builder;
     }

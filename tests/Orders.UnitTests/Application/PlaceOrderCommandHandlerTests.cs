@@ -26,6 +26,7 @@ public class PlaceOrderCommandHandlerTests
         var saved = _orders.Orders.ShouldHaveSingleItem();
         saved.Id.ShouldBe(result.Value);
         saved.CreatedAt.ShouldBe(Now);
+        saved.Status.ShouldBe(OrderStatus.AwaitingStock);
         _unitOfWork.SaveCount.ShouldBe(1);
     }
 

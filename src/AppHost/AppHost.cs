@@ -17,18 +17,27 @@ var inventoryDb = postgres.AddDatabase("inventorydb");
 
 var redis = builder.AddRedis("redis");
 
+// The management plugin adds a web UI to see queues and messages (link in the dashboard).
+var rabbitmq = builder.AddRabbitMQ("rabbitmq")
+    .WithManagementPlugin()
+    .WithLifetime(ContainerLifetime.Persistent);
+
 // ---------- Services ----------
 
 builder.AddProject<Projects.Orders_API>("orders-api")
     .WithReference(ordersDb)
+    .WithReference(rabbitmq)
     .WaitFor(ordersDb)
+    .WaitFor(rabbitmq)
     .WithHttpHealthCheck("/health/ready");
 
 builder.AddProject<Projects.Inventory_API>("inventory-api")
     .WithReference(inventoryDb)
     .WithReference(redis)
+    .WithReference(rabbitmq)
     .WaitFor(inventoryDb)
     .WaitFor(redis)
+    .WaitFor(rabbitmq)
     .WithHttpHealthCheck("/health/ready");
 
 await builder.Build().RunAsync();
