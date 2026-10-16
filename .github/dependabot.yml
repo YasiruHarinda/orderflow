@@ -1,0 +1,40 @@
+# Dependabot opens pull requests when dependencies have updates or security fixes.
+# CI then proves the update is safe before anyone merges it.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      microsoft-and-aspire:
+        patterns: ["Microsoft.*", "System.*", "Aspire.*"]
+      opentelemetry:
+        patterns: ["OpenTelemetry*", "Npgsql.OpenTelemetry"]
+      testing:
+        patterns: ["xunit*", "Microsoft.NET.Test.Sdk", "coverlet*", "Shouldly", "Testcontainers*", "NetArchTest*"]
+    ignore:
+      # MassTransit v9+ is commercially licensed; we stay on v8 (see docs/adr/0002).
+      - dependency-name: "MassTransit*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directories:
+      - "/src/Orders/Orders.API"
+      - "/src/Inventory/Inventory.API"
+      - "/src/Notifications/Notifications.Worker"
+      - "/src/Gateway"
+    schedule:
+      interval: weekly
+    groups:
+      dotnet-images:
+        patterns: ["dotnet/*"]

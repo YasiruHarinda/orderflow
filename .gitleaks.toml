@@ -1,0 +1,15 @@
+# Secret scanning rules (used by the gitleaks job in CI).
+title = "OrderFlow gitleaks config"
+
+[extend]
+useDefault = true
+
+# Well-known LOCAL development defaults (postgres/postgres, guest/guest). They only work
+# against containers on your own machine. Real secrets live in Azure Key Vault (Part 14).
+[allowlist]
+description = "Local development defaults, not real secrets"
+paths = [
+  '''compose\.yaml''',
+  '''appsettings\.Development\.json''',
+  '''deploy/k8s/local/.*''',
+]

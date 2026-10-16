@@ -1,0 +1,124 @@
+# Continuous Integration: runs on every pull request and every push to main.
+# A pull request can only be merged when all of these jobs are green (branch protection).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: this workflow only needs to read the code.
+permissions:
+  contents: read
+
+# A new push to the same branch cancels the old, now useless, run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+  COVERAGE_THRESHOLD: 70
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions are pinned to a full commit SHA, not a tag: a tag can be moved by an
+      # attacker, a SHA cannot. Dependabot keeps the SHAs up to date.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: global.json # same SDK as on the developer's laptop
+
+      - name: Cache NuGet packages
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: ${{ env.NUGET_PACKAGES }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore tools and packages
+        run: |
+          dotnet tool restore
+          dotnet restore
+
+      # Warnings are errors and NuGet audit is on, so this step also fails on
+      # analyzer warnings and on packages with known vulnerabilities.
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Check database migrations are up to date
+        run: |
+          dotnet ef migrations has-pending-model-changes --project src/Orders/Orders.Infrastructure --configuration Release --no-build
+          dotnet ef migrations has-pending-model-changes --project src/Inventory/Inventory.Infrastructure --configuration Release --no-build
+
+      - name: Unit and architecture tests
+        run: >
+          dotnet test --configuration Release --no-build
+          --filter "Category!=Integration"
+          --collect "XPlat Code Coverage" --settings tests/coverage.runsettings
+          --results-directory TestResults --logger trx
+
+      # GitHub's Ubuntu runners have Docker, so Testcontainers can start real
+      # PostgreSQL and RabbitMQ containers here.
+      - name: Integration tests
+        run: >
+          dotnet test --configuration Release --no-build
+          --filter "Category=Integration"
+          --results-directory TestResults --logger trx
+
+      - name: Coverage report and gate
+        run: |
+          dotnet tool run reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:coverage \
+            -reporttypes:"MarkdownSummaryGithub;JsonSummary"
+          cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          coverage=$(jq '.summary.linecoverage' coverage/Summary.json)
+          echo "Line coverage (Domain + Application): ${coverage}% (minimum ${COVERAGE_THRESHOLD}%)"
+          awk -v c="$coverage" -v t="$COVERAGE_THRESHOLD" 'BEGIN { exit !(c >= t) }' \
+            || { echo "::error::Coverage ${coverage}% is below ${COVERAGE_THRESHOLD}%"; exit 1; }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results
+          path: |
+            TestResults/**/*.trx
+            coverage/
+          retention-days: 14
+
+  lint-dockerfiles:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockerfile:
+          - src/Orders/Orders.API/Dockerfile
+          - src/Inventory/Inventory.API/Dockerfile
+          - src/Notifications/Notifications.Worker/Dockerfile
+          - src/Gateway/Dockerfile
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          failure-threshold: warning
+
+  secret-scan:
+    name: Scan for leaked secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0 # scan the whole history, not just the last commit
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
