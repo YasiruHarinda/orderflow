@@ -106,7 +106,6 @@ docs/                design, ADRs, runbooks, chaos testing, postmortem template
 ```
 
 ## Documentation
-- [Design document](docs/DESIGN.md): goals, architecture, data flow, SLOs
 - [Architecture Decision Records](docs/adr/README.md): *why* each choice was made, and what it costs
 - Runbooks: [high error rate](docs/runbooks/high-error-rate.md) · [orders stuck](docs/runbooks/orders-stuck.md) · [failed rollout](docs/runbooks/failed-rollout.md) · [rotate a secret](docs/runbooks/rotate-secret.md)
 - [Chaos testing](docs/chaos-testing.md) · [Postmortem template](docs/postmortems/TEMPLATE.md)

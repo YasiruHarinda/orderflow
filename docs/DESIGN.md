@@ -152,7 +152,7 @@ OrderFlow/
 │   └── k6/                         # Load test scripts
 ├── infra/terraform/                # Azure infrastructure
 ├── .github/workflows/              # CI pipelines
-└── docs/                           # Design doc, plan, ADRs, runbooks
+└── docs/                           # ADRs, runbooks
 ```
 
 The GitOps desired state lives in a **separate repository**, `orderflow-gitops`, so that application changes and deployment changes have separate history and permissions.

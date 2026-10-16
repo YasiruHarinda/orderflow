@@ -4,7 +4,7 @@
 - **Date:** 2026-10-16
 
 ## Context
-The first design had JWT validation at the gateway (Keycloak or Entra ID). Doing it properly needs an identity provider, token flows for the load tests, and role checks for the stock endpoint. The project's focus is the platform.
+A public API should validate JWTs at the gateway (Keycloak or Entra ID). Doing it properly needs an identity provider, token flows for the load tests, and role checks for the stock endpoint. The project's focus is the platform.
 
 ## Decision
 - The public API is **not authenticated** in this version. Mitigations: rate limiting per client IP, validation of every input, NetworkPolicies so only the gateway reaches the services, and no personal data stored (customers are random GUIDs).

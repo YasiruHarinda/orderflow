@@ -2,7 +2,6 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-16
-- **Supersedes** the "MassTransit state machine saga" idea in the first design draft.
 
 ## Context
 Placing an order spans two services: Orders (the order) and Inventory (the stock). There is no distributed transaction, so the process must be a **saga**: a sequence of local transactions, with **compensation** if a later step fails.

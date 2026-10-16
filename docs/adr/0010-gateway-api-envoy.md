@@ -4,7 +4,7 @@
 - **Date:** 2026-10-16
 
 ## Context
-The first design used ingress-nginx. The community ingress-nginx project was **retired in 2026**, and Kubernetes' recommended successor to the Ingress API is the **Gateway API** (`Gateway`, `HTTPRoute`).
+The usual choice for exposing services is ingress-nginx, but the community ingress-nginx project was **retired in 2026**, and Kubernetes' recommended successor to the Ingress API is the **Gateway API** (`Gateway`, `HTTPRoute`).
 
 ## Decision
 - **Envoy Gateway** implements the Gateway API in every cluster (k3d locally, AKS).

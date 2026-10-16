@@ -2,7 +2,6 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-16
-- Changes the first draft, which had each service expose a Prometheus `/metrics` endpoint.
 
 ## Context
 Services must produce logs, metrics and traces that can be correlated: from an alert, to the slow trace, to the log lines of that request.

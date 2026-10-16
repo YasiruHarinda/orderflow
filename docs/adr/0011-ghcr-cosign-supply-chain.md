@@ -2,7 +2,6 @@
 
 - **Status:** Accepted
 - **Date:** 2026-10-16
-- Changes the first draft, which used Azure Container Registry.
 
 ## Context
 Images must come from a trusted build, be free of known critical vulnerabilities, and be traceable to source. ACR costs money every day it exists, even when the cluster is destroyed.
