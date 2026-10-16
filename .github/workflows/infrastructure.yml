@@ -1,0 +1,133 @@
+# Infrastructure as Code pipeline for infra/terraform/main.
+#
+#   pull request -> fmt check, validate, PLAN (shown in the job summary for review)
+#   merge to main -> APPLY, but only after a human approves the "production" environment
+#   manual run     -> plan, apply or destroy (destroy every evening to keep costs near zero)
+#
+# Azure login uses OIDC: GitHub gets a short-lived token; no Azure secret is stored here.
+# One-time setup (see infra/README.md): run ../bootstrap, then set the repository
+# variables AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
+# TF_STATE_RESOURCE_GROUP and TF_STATE_STORAGE_ACCOUNT.
+name: Infrastructure
+
+on:
+  pull_request:
+    paths: ["infra/terraform/**", ".github/workflows/infrastructure.yml"]
+  push:
+    branches: [main]
+    paths: ["infra/terraform/**", ".github/workflows/infrastructure.yml"]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do
+        type: choice
+        options: [plan, apply, destroy]
+        default: plan
+
+permissions:
+  contents: read
+  id-token: write # request the OIDC token for Azure login
+
+# Terraform state is locked anyway, but queueing runs gives clearer results.
+concurrency:
+  group: infrastructure
+  cancel-in-progress: false
+
+env:
+  TF_VERSION: 1.16.5
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  WORKDIR: infra/terraform/main
+  # Read by both the azurerm provider and the azurerm state backend.
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  check:
+    name: Format and validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Format
+        run: terraform fmt -check -recursive infra/terraform
+      - name: Validate both stacks
+        run: |
+          for stack in infra/terraform/bootstrap infra/terraform/main; do
+            terraform -chdir="$stack" init -backend=false
+            terraform -chdir="$stack" validate
+          done
+
+  plan:
+    name: Plan
+    needs: check
+    # Skip when Azure isn't connected yet (e.g. a fork, or before bootstrap).
+    if: vars.AZURE_CLIENT_ID != '' && (github.event_name != 'workflow_dispatch' || inputs.action == 'plan')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Init
+        run: >
+          terraform -chdir="$WORKDIR" init
+          -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}"
+          -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}"
+      - name: Plan
+        run: |
+          terraform -chdir="$WORKDIR" plan -no-color -lock-timeout=5m -out=tfplan | tee plan.txt
+          {
+            echo "### Terraform plan"
+            echo '```'
+            tail -c 60000 plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    name: Apply
+    needs: check
+    if: >
+      vars.AZURE_CLIENT_ID != '' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' && inputs.action == 'apply'))
+    runs-on: ubuntu-latest
+    # Configure this environment in GitHub with "required reviewers": the job waits
+    # for a human to approve before it can change real infrastructure.
+    environment: production
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Init
+        run: >
+          terraform -chdir="$WORKDIR" init
+          -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}"
+          -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}"
+      - name: Apply
+        run: terraform -chdir="$WORKDIR" apply -auto-approve -lock-timeout=5m
+
+  destroy:
+    name: Destroy
+    needs: check
+    if: vars.AZURE_CLIENT_ID != '' && github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Init
+        run: >
+          terraform -chdir="$WORKDIR" init
+          -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}"
+          -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}"
+      - name: Destroy
+        run: terraform -chdir="$WORKDIR" destroy -auto-approve -lock-timeout=5m

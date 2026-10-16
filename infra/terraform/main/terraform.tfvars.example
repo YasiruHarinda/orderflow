@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Only subscription_id is required.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# alert_email     = "you@example.com"   # monthly budget alert
+# monthly_budget  = 30
+# enable_managed_postgres = false       # cheaper: prod uses in-cluster PostgreSQL too
