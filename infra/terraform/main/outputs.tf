@@ -16,6 +16,11 @@ output "argocd_password_command" {
   value       = "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
 }
 
+output "grafana_password_command" {
+  description = "Grafana's admin password (user: admin), read from Key Vault."
+  value       = "az keyvault secret show --vault-name ${module.keyvault.name} --name grafana-admin-password --query value -o tsv"
+}
+
 output "postgres_fqdn" {
   value = var.enable_managed_postgres ? module.postgres[0].fqdn : "in-cluster"
 }

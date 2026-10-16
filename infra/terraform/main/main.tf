@@ -51,7 +51,7 @@ module "aks" {
 # ---------- Passwords (generated once, stored only in Key Vault and Terraform state) ----------
 
 resource "random_password" "this" {
-  for_each = toset(["dev-postgres", "dev-rabbitmq", "prod-postgres", "prod-rabbitmq"])
+  for_each = toset(["dev-postgres", "dev-rabbitmq", "prod-postgres", "prod-rabbitmq", "grafana-admin"])
 
   length  = 32
   special = false # avoids escaping problems in connection strings and URIs
@@ -111,6 +111,7 @@ module "keyvault" {
     prod-postgres-password = random_password.this["prod-postgres"].result
     prod-postgres-host     = var.enable_managed_postgres ? module.postgres[0].fqdn : "postgres"
     prod-postgres-user     = var.enable_managed_postgres ? module.postgres[0].admin_login : "orderflow"
+    grafana-admin-password = random_password.this["grafana-admin"].result
   }
 
   tags = local.tags
