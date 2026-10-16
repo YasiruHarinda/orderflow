@@ -1,5 +1,8 @@
 <Solution>
-  <Folder Name="/src/" />
+  <Folder Name="/src/">
+    <Project Path="src/AppHost/AppHost.csproj" />
+    <Project Path="src/ServiceDefaults/ServiceDefaults.csproj" />
+  </Folder>
   <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/BuildingBlocks.Application/BuildingBlocks.Application.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />

@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Orders.Application\Orders.Application.csproj" />
     <ProjectReference Include="..\Orders.Infrastructure\Orders.Infrastructure.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlocks.Web\BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -29,6 +29,30 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
+  <!-- Service defaults: telemetry, resilience, service discovery -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.11.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.0" />
+  </ItemGroup>
+
+  <!-- Aspire app host (local development orchestration) -->
+  <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.1" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.6.1" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.6.1" />
+  </ItemGroup>
+
+  <!-- Security pins: patched versions of vulnerable indirect dependencies (found by NuGet audit). -->
+  <ItemGroup>
+    <!-- GHSA-qhrr-8q5h-9q3h, pulled in by Aspire.Hosting. Same major version, patched release. -->
+    <PackageVersion Include="MessagePack" Version="2.5.307" />
+  </ItemGroup>
+
   <!-- Web -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />

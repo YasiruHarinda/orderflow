@@ -5,13 +5,15 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Telemetry, health checks, resilience: the same defaults in every service.
+builder.AddServiceDefaults();
+
 // The API is the "composition root": the one place where all layers are connected.
 builder.Services.AddOrdersApplication();
 builder.AddOrdersInfrastructure();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -37,7 +39,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.MapHealthChecks("/health");
+app.MapDefaultEndpoints();
 app.MapOrderEndpoints();
 
 await app.RunAsync();
