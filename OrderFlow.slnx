@@ -8,6 +8,12 @@
     <Project Path="src/BuildingBlocks/BuildingBlocks.Domain/BuildingBlocks.Domain.csproj" />
     <Project Path="src/BuildingBlocks/BuildingBlocks.Web/BuildingBlocks.Web.csproj" />
   </Folder>
+  <Folder Name="/src/Inventory/">
+    <Project Path="src/Inventory/Inventory.API/Inventory.API.csproj" />
+    <Project Path="src/Inventory/Inventory.Application/Inventory.Application.csproj" />
+    <Project Path="src/Inventory/Inventory.Domain/Inventory.Domain.csproj" />
+    <Project Path="src/Inventory/Inventory.Infrastructure/Inventory.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/src/Orders/">
     <Project Path="src/Orders/Orders.API/Orders.API.csproj" />
     <Project Path="src/Orders/Orders.Application/Orders.Application.csproj" />
@@ -15,6 +21,7 @@
     <Project Path="src/Orders/Orders.Infrastructure/Orders.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Inventory.UnitTests/Inventory.UnitTests.csproj" />
     <Project Path="tests/Orders.UnitTests/Orders.UnitTests.csproj" />
   </Folder>
 </Solution>
