@@ -490,3 +490,8 @@ $RECYCLE.BIN/
 !*.tfvars.example
 crash.log
 *.tfplan
+
+# ----- Test output -----
+TestResults/
+coverage/
+k6-*.log

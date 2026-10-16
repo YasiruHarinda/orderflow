@@ -2,6 +2,30 @@
 
 See [DESIGN.md](DESIGN.md) for the architecture. Each day ends with a **working, committed, pushed** state. Items marked ⭐ are stretch goals; skip them if the day runs long.
 
+## Status (2026-10-16)
+
+The code was built in 17 parts, one commit each (`git log --oneline`):
+
+| Part | Content | Status |
+|---|---|---|
+| 1–3 | Solution, Order domain, CQRS application layer | ✅ |
+| 4–5 | EF Core + API, Aspire + ServiceDefaults | ✅ |
+| 6–9 | Inventory, messaging + outbox, saga + notifications, YARP gateway | ✅ |
+| 10 | Architecture + Testcontainers integration tests | ✅ |
+| 11–12 | Dockerfiles + compose, GitHub Actions CI/CD | ✅ |
+| 13 | Helm chart, k3d script, kind e2e pipeline | ✅ |
+| 14 | Terraform (bootstrap + main) and pipeline | ✅ validated, **not yet applied** |
+| 15–16 | GitOps repo (ArgoCD, platform), observability | ✅ rendered and validated, **not yet deployed** |
+| 17 | k6, chaos test, ADRs, runbooks, README | ✅ |
+
+**Still to do (needs your accounts and machine):**
+- [ ] Push both repos; check the CI, Kubernetes and CodeQL workflows are green
+- [ ] Install Docker Desktop; run `dotnet run --project src/AppHost` and `./scripts/k3d-up.ps1` locally
+- [ ] Azure: run bootstrap, set the GitHub variables and the `GITOPS_TOKEN` secret, apply ([infra/README.md](../infra/README.md))
+- [ ] Run the chaos test in dev and write the first postmortem with real numbers ([chaos-testing.md](chaos-testing.md))
+- [ ] Grafana screenshots + a 3-minute demo video for the README
+- [ ] Stretch: authentication (ADR-0012), Kyverno signature enforcement (ADR-0011), KEDA, preview environments
+
 ## Day 0 — Setup (≈1–2 hours, before Day 1)
 
 Install (all via `winget`):

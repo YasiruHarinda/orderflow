@@ -2,10 +2,27 @@
 
 | | |
 |---|---|
-| **Status** | Draft v1 |
+| **Status** | v1.0 — implemented |
 | **Author** | Yasiru |
-| **Date** | 2026-10-14 |
+| **Date** | 2026-10-14 (draft), 2026-10-16 (implemented) |
 | **Target** | .NET 10 (LTS) · Azure Kubernetes Service · GitOps |
+
+> ### Changes made during implementation
+> This document was written **before** the code. The decisions below changed while building, and each has an ADR explaining why. Where the text further down disagrees with this table, the table (and the ADR) wins.
+>
+> | Original design | Implemented | Why |
+> |---|---|---|
+> | CQRS with MediatR | In-house handler interfaces + Scrutor decorators | MediatR licence change ([ADR-0004](adr/0004-cqrs-without-mediatr.md)) |
+> | MassTransit (latest) | MassTransit **v8** | v9 is commercially licensed ([ADR-0002](adr/0002-masstransit-v8-transactional-outbox.md)) |
+> | MassTransit state machine saga | Choreographed saga, Order aggregate as the state machine, `StuckOrderMonitor` timeout | No scheduler infrastructure needed ([ADR-0003](adr/0003-choreographed-saga-with-timeout.md)) |
+> | JWT auth at the gateway | Deferred; rate limiting and NetworkPolicies only | Scope ([ADR-0012](adr/0012-authentication-deferred.md)) |
+> | Prometheus `/metrics` endpoint per service | OTLP → OpenTelemetry Collector → Prometheus remote write | Single telemetry path; exporter still beta ([ADR-0009](adr/0009-opentelemetry-grafana-stack.md)) |
+> | ingress-nginx | Gateway API + Envoy Gateway | ingress-nginx retired ([ADR-0010](adr/0010-gateway-api-envoy.md)) |
+> | Azure Container Registry | GitHub Container Registry | No standing cost ([ADR-0011](adr/0011-ghcr-cosign-supply-chain.md)) |
+> | SonarCloud | CodeQL (C# + workflows), gitleaks, NuGet audit | Native to GitHub, no external account |
+> | KEDA scaling on queue depth | CPU-based HPA; queue depth alerted on | Future work |
+> | Grafana Tempo/Loki "optional" | Both deployed, with log ↔ trace links | — |
+> | — (added) | kind end-to-end deployment test on every PR | Catches chart/image drift before merge |
 
 ---
 
