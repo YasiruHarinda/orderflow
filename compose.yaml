@@ -1,0 +1,124 @@
+# Runs the whole system from the real Docker images (the same images Kubernetes runs).
+#
+#   docker compose up --build
+#
+# Then open:
+#   http://localhost:8080/api/v1/products   API gateway
+#   http://localhost:3000                   Grafana (logs, traces, metrics)
+#   http://localhost:15672                  RabbitMQ UI (guest / guest)
+#
+# For day-to-day coding, the Aspire app host (dotnet run --project src/AppHost) is faster.
+# Passwords here are local development defaults only.
+
+name: orderflow
+
+x-dotnet-service: &dotnet-service
+  restart: unless-stopped
+  environment: &dotnet-env
+    ASPNETCORE_ENVIRONMENT: Production
+    OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4317
+    OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+    ConnectionStrings__rabbitmq: amqp://guest:guest@rabbitmq:5672
+
+services:
+  # ---------- Infrastructure ----------
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./deploy/docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4.1-management-alpine
+    ports:
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Grafana + Prometheus + Loki + Tempo + OpenTelemetry Collector in ONE container.
+  # Great for local use; Kubernetes runs them separately (Part 16).
+  otel-lgtm:
+    image: grafana/otel-lgtm:0.36.0
+    ports:
+      - "3000:3000"
+
+  # ---------- OrderFlow services ----------
+  orders-api:
+    <<: *dotnet-service
+    build:
+      context: .
+      dockerfile: src/Orders/Orders.API/Dockerfile
+    environment:
+      <<: *dotnet-env
+      OTEL_SERVICE_NAME: orders-api
+      Database__MigrateOnStartup: "true"
+      ConnectionStrings__ordersdb: Host=postgres;Database=ordersdb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  inventory-api:
+    <<: *dotnet-service
+    build:
+      context: .
+      dockerfile: src/Inventory/Inventory.API/Dockerfile
+    environment:
+      <<: *dotnet-env
+      OTEL_SERVICE_NAME: inventory-api
+      Database__MigrateOnStartup: "true"
+      ConnectionStrings__inventorydb: Host=postgres;Database=inventorydb;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres}
+      ConnectionStrings__redis: redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  notifications-worker:
+    <<: *dotnet-service
+    build:
+      context: .
+      dockerfile: src/Notifications/Notifications.Worker/Dockerfile
+    environment:
+      <<: *dotnet-env
+      OTEL_SERVICE_NAME: notifications-worker
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+
+  gateway:
+    <<: *dotnet-service
+    build:
+      context: .
+      dockerfile: src/Gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *dotnet-env
+      OTEL_SERVICE_NAME: gateway
+      # Containers listen on 8080; in Kubernetes a Service maps port 80 to 8080 for us.
+      ReverseProxy__Clusters__orders__Destinations__orders-api__Address: http://orders-api:8080
+      ReverseProxy__Clusters__inventory__Destinations__inventory-api__Address: http://inventory-api:8080
+    depends_on:
+      - orders-api
+      - inventory-api
+
+volumes:
+  postgres-data:

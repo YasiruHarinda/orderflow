@@ -1,0 +1,17 @@
+# Everything listed here is NOT sent to Docker when building images.
+# A smaller build context = faster builds, and no local secrets or junk inside images.
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/*.user
+**/Dockerfile
+.git/
+.github/
+docs/
+deploy/
+infra/
+tests/
+scripts/
+src/AppHost/
+**/appsettings.Development.json
