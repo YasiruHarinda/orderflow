@@ -18,6 +18,15 @@ public sealed class OrderLine : Entity<Guid>
         Quantity = quantity;
     }
 
+    // Used only by EF Core when it loads a line from the database.
+    private OrderLine()
+        : base(Guid.Empty)
+    {
+        Sku = null!;
+        ProductName = null!;
+        UnitPrice = null!;
+    }
+
     public string Sku { get; private set; }
 
     public string ProductName { get; private set; }
