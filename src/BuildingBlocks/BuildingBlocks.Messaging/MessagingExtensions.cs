@@ -35,7 +35,7 @@ public static class MessagingExtensions
             // Queue names get a service prefix, e.g. "inventory-order-confirmed" and
             // "notifications-order-confirmed": each service gets its own copy of every event.
             bus.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter(serviceName, false));
-            bus.AddConsumers(consumersAssembly);
+            AddConsumersIncludingInternal(bus, consumersAssembly);
 
             bus.AddEntityFrameworkOutbox<TDbContext>(outbox =>
             {
@@ -70,7 +70,7 @@ public static class MessagingExtensions
         builder.Services.AddMassTransit(bus =>
         {
             bus.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter(serviceName, false));
-            bus.AddConsumers(consumersAssembly);
+            AddConsumersIncludingInternal(bus, consumersAssembly);
 
             bus.AddConfigureEndpointsCallback((_, _, endpoint) =>
                 endpoint.UseMessageRetry(retry => retry.Intervals(100, 500, 1_000, 5_000, 10_000)));
@@ -92,6 +92,24 @@ public static class MessagingExtensions
         modelBuilder.AddOutboxMessageEntity();
         modelBuilder.AddOutboxStateEntity();
         return modelBuilder;
+    }
+
+    /// <summary>
+    /// Registers every consumer in the assembly, public or not. MassTransit's own
+    /// AddConsumers(assembly) only scans PUBLIC types, and our consumers are internal (like
+    /// the handlers, they are not part of any public API). Without this, no consumer is
+    /// registered, no queue is bound, and RabbitMQ silently drops every message.
+    /// </summary>
+    private static void AddConsumersIncludingInternal(IBusRegistrationConfigurator bus, Assembly assembly)
+    {
+        var consumerTypes = assembly.GetTypes().Where(type =>
+            type is { IsClass: true, IsAbstract: false, IsGenericTypeDefinition: false } &&
+            type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConsumer<>)));
+
+        foreach (var consumerType in consumerTypes)
+        {
+            bus.AddConsumer(consumerType);
+        }
     }
 
     // e.g. amqp://user:password@rabbitmq:5672 (Aspire and Kubernetes both provide this format).
