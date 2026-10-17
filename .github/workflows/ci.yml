@@ -95,6 +95,38 @@ jobs:
             coverage/
           retention-days: 14
 
+  web:
+    name: Web store
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/Web
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: src/Web/.node-version
+          cache: npm
+          cache-dependency-path: src/Web/package-lock.json
+
+      # "npm ci" installs exactly what package-lock.json says, and fails if it is out of date.
+      - name: Install
+        run: npm ci --no-fund
+
+      - name: Check for vulnerable packages
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit and component tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
   lint-dockerfiles:
     name: Lint Dockerfiles
     runs-on: ubuntu-latest

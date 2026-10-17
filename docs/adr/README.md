@@ -16,5 +16,6 @@ An ADR records one important decision: the situation, what we chose, what we gav
 | [0010](0010-gateway-api-envoy.md) | Gateway API with Envoy Gateway instead of ingress-nginx | Accepted |
 | [0011](0011-ghcr-cosign-supply-chain.md) | GHCR, Trivy, SBOM and cosign for the supply chain | Accepted |
 | [0012](0012-authentication-deferred.md) | End-user authentication deferred | Accepted (temporary) |
+| [0013](0013-web-store-served-by-gateway.md) | A React web store, served by the YARP gateway | Accepted |
 
 Format: *Context → Decision → Consequences* (Michael Nygard).

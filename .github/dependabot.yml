@@ -27,6 +27,16 @@ updates:
       actions:
         patterns: ["*"]
 
+  - package-ecosystem: npm
+    directory: "/src/Web"
+    schedule:
+      interval: weekly
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react*", "react-router"]
+      build-and-test:
+        patterns: ["vite", "@vitejs/*", "vitest", "typescript", "jsdom", "@testing-library/*", "@types/node"]
+
   - package-ecosystem: docker
     directories:
       - "/src/Orders/Orders.API"

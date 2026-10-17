@@ -60,7 +60,9 @@ flowchart LR
 | **Local Kubernetes** (same Helm chart as AKS) | `./scripts/k3d-up.ps1` | Docker, k3d, kubectl, helm |
 | **Azure** | see [infra/README.md](infra/README.md) | Azure subscription |
 
-Then try it (port 8080 for Compose and k3d; with Aspire, use the gateway URL shown in the dashboard):
+Then open the **web store** at http://localhost:8080 (Compose and k3d; with Aspire, open the `web` link in the dashboard). Add products to the cart, place an order and watch it move from *Placed* to *Confirmed* or *Rejected*; **Stock admin** changes stock levels. The store is a React app in `src/Web`, served by the gateway ([ADR-0013](docs/adr/0013-web-store-served-by-gateway.md)).
+
+Or use the API directly (with Aspire, use the gateway URL shown in the dashboard):
 ```bash
 curl http://localhost:8080/api/v1/products
 curl -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -d '{
@@ -89,7 +91,8 @@ src/
   Orders/            Domain · Application · Infrastructure · API
   Inventory/         Domain · Application · Infrastructure · API
   Notifications/     Worker (consumes events)
-  Gateway/           YARP reverse proxy
+  Gateway/           YARP reverse proxy; also serves the web store
+  Web/               React + TypeScript store and stock admin (Vite)
   BuildingBlocks/    shared Domain/Application/Web/Messaging code
   Contracts/         integration events (the public API between services)
   ServiceDefaults/   OpenTelemetry, health checks, resilience

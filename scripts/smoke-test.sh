@@ -28,6 +28,13 @@ wait_for_status() { # $1 = order id, $2 = expected status
   fail "order $1 is '$status', expected '$2'"
 }
 
+echo "0. Web store"
+home="$(curl -fsS "$BASE_URL/")"
+[[ "$home" == *'<div id="root">'* ]] || fail "the gateway does not serve the web store at /"
+deep_link="$(curl -fsS "$BASE_URL/orders/smoke-test")"
+[[ "$deep_link" == *'<div id="root">'* ]] || fail "deep links do not fall back to the web store"
+echo "  store and deep links are served"
+
 echo "1. Product catalogue"
 count="$(curl -fsS "$BASE_URL/api/v1/products?pageSize=50" | jq '.totalCount')"
 [[ "$count" -ge 1 ]] || fail "expected products, got $count"

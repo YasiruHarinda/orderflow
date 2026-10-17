@@ -1,6 +1,7 @@
 {{- /*
-Gateway API (the successor of Ingress): sends /api/* from the shared Envoy Gateway
-to the OrderFlow gateway service. Nothing else in the cluster is exposed.
+Gateway API (the successor of Ingress): sends all traffic from the shared Envoy Gateway
+to the OrderFlow gateway service, which serves the web store and routes /api/* to the
+services. Nothing else in the cluster is exposed.
 */ -}}
 {{- if and .Values.httpRoute.enabled .Values.services.gateway.enabled }}
 apiVersion: gateway.networking.k8s.io/v1
@@ -25,7 +26,7 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            value: /api
+            value: /
       backendRefs:
         - name: gateway
           port: 80

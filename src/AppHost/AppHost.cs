@@ -46,10 +46,18 @@ builder.AddProject<Projects.Notifications_Worker>("notifications-worker")
     .WithHttpHealthCheck("/health/ready");
 
 // The only service reachable from outside. Try: http://localhost:5000/api/v1/products
-builder.AddProject<Projects.Gateway>("gateway")
+var gateway = builder.AddProject<Projects.Gateway>("gateway")
     .WithReference(ordersApi)
     .WithReference(inventoryApi)
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health/ready");
+
+// The web store on the Vite dev server, with hot reload. It runs "npm install" first and
+// forwards /api to the gateway (vite.config.ts reads the gateway address Aspire passes in).
+// In containers and Kubernetes there is no dev server: the gateway serves the built files.
+builder.AddViteApp("web", "../Web")
+    .WithReference(gateway)
+    .WaitFor(gateway)
+    .WithExternalHttpEndpoints();
 
 await builder.Build().RunAsync();

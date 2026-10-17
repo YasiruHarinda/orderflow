@@ -67,5 +67,6 @@ helm upgrade --install orderflow deploy/helm/orderflow `
 Step "Done"
 kubectl -n orderflow get pods
 Write-Host "`nTry it:" -ForegroundColor Green
+Write-Host "  Open the store: http://localhost:8080"
 Write-Host "  curl http://localhost:8080/api/v1/products"
 Write-Host "  Remove the cluster: k3d cluster delete $ClusterName"

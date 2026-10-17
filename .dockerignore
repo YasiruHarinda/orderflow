@@ -15,3 +15,6 @@ tests/
 scripts/
 src/AppHost/
 **/appsettings.Development.json
+**/node_modules/
+src/Web/dist/
+src/Gateway/wwwroot/
