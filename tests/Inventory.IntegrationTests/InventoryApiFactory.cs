@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
@@ -32,5 +34,13 @@ public sealed class InventoryApiFactory : WebApplicationFactory<Program>, IAsync
         builder.UseSetting("ConnectionStrings:inventorydb", _postgres.GetConnectionString());
         builder.UseSetting("ConnectionStrings:rabbitmq", _rabbitMq.GetConnectionString());
         builder.UseSetting("Database:MigrateOnStartup", "true");
+
+        // Start the host only once the bus has created its queues and bindings. Otherwise a
+        // test can publish before the consumer's queue exists, and RabbitMQ drops the message.
+        builder.ConfigureServices(services => services.Configure<MassTransitHostOptions>(options =>
+        {
+            options.WaitUntilStarted = true;
+            options.StartTimeout = TimeSpan.FromSeconds(60);
+        }));
     }
 }

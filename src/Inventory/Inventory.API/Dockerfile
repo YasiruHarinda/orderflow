@@ -9,8 +9,9 @@ WORKDIR /src
 COPY . .
 
 # The cache mount keeps downloaded NuGet packages between builds, so rebuilding after a
-# code change does not download everything again.
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+# code change does not download everything again. "locked" makes parallel builds take
+# turns: two restores writing the same package folder at once can corrupt it.
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages,sharing=locked \
     dotnet publish src/Inventory/Inventory.API/Inventory.API.csproj \
       --configuration Release \
       --output /app \

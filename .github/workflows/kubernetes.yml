@@ -83,10 +83,21 @@ jobs:
             [notifications-worker]=src/Notifications/Notifications.Worker/Dockerfile
             [gateway]=src/Gateway/Dockerfile
           )
+          declare -A pids
           for svc in "${!dockerfiles[@]}"; do
-            docker build -t "orderflow/$svc:dev" -f "${dockerfiles[$svc]}" . &
+            docker build -t "orderflow/$svc:dev" -f "${dockerfiles[$svc]}" . > "build-$svc.log" 2>&1 &
+            pids[$svc]=$!
           done
-          wait
+          # A bare "wait" ignores exit codes; wait for each build and show the log of any that failed.
+          failed=0
+          for svc in "${!pids[@]}"; do
+            if ! wait "${pids[$svc]}"; then
+              echo "::error::docker build failed for $svc"
+              cat "build-$svc.log"
+              failed=1
+            fi
+          done
+          [[ $failed -eq 0 ]] || exit 1
           kind load docker-image --name orderflow orderflow/{orders-api,inventory-api,notifications-worker,gateway}:dev
 
       - name: Deploy dependencies
@@ -115,7 +126,8 @@ jobs:
       - name: Diagnostics on failure
         if: failure()
         run: |
-          kubectl -n orderflow get pods,jobs,events --sort-by=.lastTimestamp
+          kubectl -n orderflow get pods,jobs || true
+          kubectl -n orderflow get events --sort-by=.lastTimestamp || true
           for pod in $(kubectl -n orderflow get pods -o name); do
             echo "----- $pod"; kubectl -n orderflow logs "$pod" --all-containers --tail=100 || true
           done
