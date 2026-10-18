@@ -15,7 +15,7 @@ updates:
       testing:
         patterns: ["xunit*", "Microsoft.NET.Test.Sdk", "coverlet*", "Shouldly", "Testcontainers*", "NetArchTest*"]
     ignore:
-      # MassTransit v9+ is commercially licensed; we stay on v8 (see docs/adr/0002).
+      # MassTransit v9+ is commercially licensed; we stay on v8.
       - dependency-name: "MassTransit*"
         update-types: ["version-update:semver-major"]
 

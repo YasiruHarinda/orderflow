@@ -16,8 +16,7 @@ export function StockAdminPage() {
         </p>
       </div>
       <div className="notice" role="note">
-        This page has no login yet. In a real deployment the stock endpoint is the first thing to protect (see{" "}
-        <code>docs/adr/0012</code>).
+        This page has no login yet. In a real deployment the stock endpoint is the first thing to protect.
       </div>
 
       {products.isPending && <p className="muted">Loading products…</p>}

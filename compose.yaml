@@ -39,6 +39,10 @@ services:
 
   rabbitmq:
     image: rabbitmq:4.1-management-alpine
+    # Run as the image's "rabbitmq" user, not root. The healthcheck below runs as the
+    # container user too; as root, its first run could create /var/lib/rabbitmq/.erlang.cookie
+    # owned by root before the server did, and the server then crashes with "eacces".
+    user: rabbitmq
     ports:
       - "15672:15672"
     healthcheck:

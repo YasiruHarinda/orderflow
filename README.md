@@ -31,9 +31,9 @@ flowchart LR
 **.NET engineering**
 - **Clean Architecture** per service, with layer rules enforced by architecture tests
 - **DDD**: aggregates protect their invariants; value objects; domain events
-- **CQRS** with a validation decorator (FluentValidation, Scrutor). MediatR is deliberately not used ([ADR-0004](docs/adr/0004-cqrs-without-mediatr.md))
+- **CQRS** with a validation decorator (FluentValidation, Scrutor). MediatR is deliberately not used
 - **Reliable messaging**: MassTransit + RabbitMQ with **transactional outbox and inbox**, retries, dead-letter queues
-- **Saga** with compensation and a timeout safety net; idempotent, all-or-nothing stock reservation ([ADR-0003](docs/adr/0003-choreographed-saga-with-timeout.md))
+- **Saga** with compensation and a timeout safety net; idempotent, all-or-nothing stock reservation
 - **EF Core 10** + PostgreSQL: optimistic concurrency (`xmin`), JSON columns, check constraints, migrations run as a Kubernetes Job
 - **HybridCache** (memory + Redis) with tag invalidation; **YARP** gateway with rate limiting
 - **.NET Aspire** for local development; **OpenTelemetry** with custom business metrics
@@ -60,7 +60,7 @@ flowchart LR
 | **Local Kubernetes** (same Helm chart as AKS) | `./scripts/k3d-up.ps1` | Docker, k3d, kubectl, helm |
 | **Azure** | see [infra/README.md](infra/README.md) | Azure subscription |
 
-Then open the **web store** at http://localhost:8080 (Compose and k3d; with Aspire, open the `web` link in the dashboard). Add products to the cart, place an order and watch it move from *Placed* to *Confirmed* or *Rejected*; **Stock admin** changes stock levels. The store is a React app in `src/Web`, served by the gateway ([ADR-0013](docs/adr/0013-web-store-served-by-gateway.md)).
+Then open the **web store** at http://localhost:8080 (Compose and k3d; with Aspire, open the `web` link in the dashboard). Add products to the cart, place an order and watch it move from *Placed* to *Confirmed* or *Rejected*; **Stock admin** changes stock levels. The store is a React app in `src/Web`, served by the gateway.
 
 Or use the API directly (with Aspire, use the gateway URL shown in the dashboard):
 ```bash
@@ -104,11 +104,11 @@ deploy/
   k6/                load test
 infra/terraform/     bootstrap · main · modules (network, aks, keyvault, postgres)
 scripts/             k3d-up, smoke test, chaos test
-docs/                design, ADRs, runbooks, chaos testing, postmortem template
+docs/                design, runbooks, chaos testing, postmortem template
 .github/workflows/   ci · kubernetes · release · infrastructure · codeql
 ```
 
 - [Chaos testing](docs/chaos-testing.md) · [Postmortem template](docs/postmortems/TEMPLATE.md)
 
 ## Known limitations
-Honest list, each with a planned fix in the ADRs: no end-user authentication yet ([ADR-0012](docs/adr/0012-authentication-deferred.md)); dev and prod share one cluster ([ADR-0006](docs/adr/0006-single-aks-cluster-namespaces.md)); single-node RabbitMQ; image signatures are produced but not yet enforced at admission ([ADR-0011](docs/adr/0011-ghcr-cosign-supply-chain.md)).
+Honest list: no end-user authentication yet; dev and prod share one cluster; single-node RabbitMQ; image signatures are produced but not yet enforced at admission.

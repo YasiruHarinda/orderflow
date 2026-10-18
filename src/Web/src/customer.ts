@@ -1,4 +1,4 @@
-// There is no login yet (docs/adr/0012), so the browser plays one customer: a random id,
+// There is no login yet, so the browser plays one customer: a random id,
 // kept in localStorage so "My orders" still works after a reload.
 
 const STORAGE_KEY = "orderflow.customerId";

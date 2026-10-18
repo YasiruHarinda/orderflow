@@ -1,5 +1,5 @@
 # Single-instance PostgreSQL for local and dev clusters. Production uses Azure Database for
-# PostgreSQL (managed backups, high availability) instead - see docs/adr/0006.
+# PostgreSQL (managed backups, high availability) instead.
 apiVersion: v1
 kind: ConfigMap
 metadata:

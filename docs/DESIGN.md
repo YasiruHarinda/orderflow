@@ -8,17 +8,17 @@
 | **Target** | .NET 10 (LTS) · Azure Kubernetes Service · GitOps |
 
 > ### Changes made during implementation
-> This document was written **before** the code. The decisions below changed while building, and each has an ADR explaining why. Where the text further down disagrees with this table, the table (and the ADR) wins.
+> This document was written **before** the code. The decisions below changed while building. Where the text further down disagrees with this table, the table wins.
 >
 > | Original design | Implemented | Why |
 > |---|---|---|
-> | CQRS with MediatR | In-house handler interfaces + Scrutor decorators | MediatR licence change ([ADR-0004](adr/0004-cqrs-without-mediatr.md)) |
-> | MassTransit (latest) | MassTransit **v8** | v9 is commercially licensed ([ADR-0002](adr/0002-masstransit-v8-transactional-outbox.md)) |
-> | MassTransit state machine saga | Choreographed saga, Order aggregate as the state machine, `StuckOrderMonitor` timeout | No scheduler infrastructure needed ([ADR-0003](adr/0003-choreographed-saga-with-timeout.md)) |
-> | JWT auth at the gateway | Deferred; rate limiting and NetworkPolicies only | Scope ([ADR-0012](adr/0012-authentication-deferred.md)) |
-> | Prometheus `/metrics` endpoint per service | OTLP → OpenTelemetry Collector → Prometheus remote write | Single telemetry path; exporter still beta ([ADR-0009](adr/0009-opentelemetry-grafana-stack.md)) |
-> | ingress-nginx | Gateway API + Envoy Gateway | ingress-nginx retired ([ADR-0010](adr/0010-gateway-api-envoy.md)) |
-> | Azure Container Registry | GitHub Container Registry | No standing cost ([ADR-0011](adr/0011-ghcr-cosign-supply-chain.md)) |
+> | CQRS with MediatR | In-house handler interfaces + Scrutor decorators | MediatR licence change |
+> | MassTransit (latest) | MassTransit **v8** | v9 is commercially licensed |
+> | MassTransit state machine saga | Choreographed saga, Order aggregate as the state machine, `StuckOrderMonitor` timeout | No scheduler infrastructure needed |
+> | JWT auth at the gateway | Deferred; rate limiting and NetworkPolicies only | Scope |
+> | Prometheus `/metrics` endpoint per service | OTLP → OpenTelemetry Collector → Prometheus remote write | Single telemetry path; exporter still beta |
+> | ingress-nginx | Gateway API + Envoy Gateway | ingress-nginx retired |
+> | Azure Container Registry | GitHub Container Registry | No standing cost |
 > | SonarCloud | CodeQL (C# + workflows), gitleaks, NuGet audit | Native to GitHub, no external account |
 > | KEDA scaling on queue depth | CPU-based HPA; queue depth alerted on | Future work |
 > | Grafana Tempo/Loki "optional" | Both deployed, with log ↔ trace links | — |
@@ -152,7 +152,7 @@ OrderFlow/
 │   └── k6/                         # Load test scripts
 ├── infra/terraform/                # Azure infrastructure
 ├── .github/workflows/              # CI pipelines
-└── docs/                           # ADRs, runbooks
+└── docs/                           # design, runbooks
 ```
 
 The GitOps desired state lives in a **separate repository**, `orderflow-gitops`, so that application changes and deployment changes have separate history and permissions.
@@ -213,7 +213,7 @@ Coverage target: 80% on `Domain` and `Application` layers, enforced in CI.
 | `dev` | AKS, namespace `dev` | ArgoCD, automatic on every `main` build | Integration |
 | `prod` | AKS, namespace `prod` | ArgoCD, after promotion PR is merged | "Production" with canary |
 
-To control cost, `dev` and `prod` share one small AKS cluster and are separated by namespace, NetworkPolicies, and resource quotas. Separate clusters are listed as future work in an ADR.
+To control cost, `dev` and `prod` share one small AKS cluster and are separated by namespace, NetworkPolicies, and resource quotas. Separate clusters are listed as future work.
 
 ### 5.2 Delivery pipeline
 
@@ -259,7 +259,7 @@ infra/terraform/
 ```
 
 - Remote state in Azure Storage with state locking.
-- In `dev`, PostgreSQL, Redis and RabbitMQ run in-cluster (Helm charts) to save cost; `prod` uses Azure PostgreSQL Flexible Server (the ADR documents this trade-off).
+- In `dev`, PostgreSQL, Redis and RabbitMQ run in-cluster (Helm charts) to save cost; `prod` uses Azure PostgreSQL Flexible Server.
 - Cost guard: one `Standard_B2s`/`B4ms` node pool with autoscaler min 1 / max 3, plus an Azure budget alert. The cluster is destroyed at the end of each working day.
 
 ### 5.4 Kubernetes
@@ -304,22 +304,7 @@ infra/terraform/
 - **Runbooks** (`docs/runbooks/`): saga stuck, high error rate, failed rollout, rotating a secret, restoring the database.
 - **DR:** `terraform destroy` + `apply` + ArgoCD sync rebuilds everything; recovery time is measured and recorded.
 
-## 7. Architecture Decision Records
-
-Stored in `docs/adr/` using the Michael Nygard format.
-
-| # | Decision |
-|---|---|
-| 0001 | Use microservices with database-per-service |
-| 0002 | Use MassTransit + RabbitMQ with transactional outbox |
-| 0003 | Use .NET Aspire for local development, Helm for Kubernetes |
-| 0004 | Use AKS with Terraform |
-| 0005 | Use GitOps (ArgoCD) instead of push-based `kubectl` deploys |
-| 0006 | Share one cluster with namespace isolation (cost trade-off) |
-| 0007 | Use Argo Rollouts for canary with Prometheus analysis |
-| 0008 | Use OpenTelemetry + Grafana LGTM stack |
-
-## 8. Risks
+## 7. Risks
 
 | Risk | Mitigation |
 |---|---|
@@ -328,7 +313,7 @@ Stored in `docs/adr/` using the Michael Nygard format.
 | Laptop resources (k3d + observability stack) | Lightweight values files, run observability only when needed |
 | Tool learning curve (ArgoCD, Terraform) | Validate locally first; each day ends with a working, committed state |
 
-## 9. Future Work
+## 8. Future Work
 
 - Separate dev/prod clusters, multi-region failover.
 - Policy as code with Kyverno (enforce signed images).
