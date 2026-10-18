@@ -2,7 +2,7 @@
 # Build from the repository root:  docker build -f src/Gateway/Dockerfile .
 
 # ---------- Stage 1: web. Builds the React store (src/Web) into static files. ----------
-FROM node:22-alpine AS web
+FROM node:26-alpine AS web
 WORKDIR /web
 
 # Dependencies first: this layer is only rebuilt when the lockfile changes.
