@@ -14,7 +14,7 @@ COPY src/Web/ ./
 RUN npm run build
 
 # ---------- Stage 2: build. Has the full .NET SDK (large); used only to compile. ----------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 
 # .dockerignore keeps bin/, obj/, node_modules, tests, docs and infra out of the build context.
