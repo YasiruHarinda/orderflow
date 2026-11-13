@@ -32,7 +32,7 @@
   <!-- Messaging. MassTransit stays on v8 (Apache 2.0); v9 requires a commercial licence. -->
   <ItemGroup>
     <PackageVersion Include="MassTransit" Version="8.5.11" />
-    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.5.11" />
+    <PackageVersion Include="MassTransit.EntityFrameworkCore" Version="8.5.12" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.11" />
   </ItemGroup>
 
